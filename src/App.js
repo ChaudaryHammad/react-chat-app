@@ -93,6 +93,7 @@ function App() {
       {user ? (
         <Container h={"100vh"} bg={"white"}>
           <VStack h="full" padding={"4 0"}>
+         
             {/* VStack is a flex and has fles direction colum by default */}
             <Button w="full" colorScheme={"pink"} onClick={logOutHandler}>
               Logout⬆️
@@ -123,7 +124,9 @@ function App() {
                 </Button>
               </HStack>
             </form>
+            <h1 css={{color:'purple'}}>Created by: Hammad</h1>
           </VStack>
+          
         </Container>
       ) : (
         <VStack
@@ -136,6 +139,7 @@ function App() {
           <Button colorScheme={"yellow"} onClick={loginHandler}>
             Sign In With Google 🌐
           </Button>
+          <h1>Created with ❤️</h1>
         </VStack>
       )}
     </Box>
