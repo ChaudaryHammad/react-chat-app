@@ -1,5 +1,5 @@
 import { app } from "./firebase";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -17,30 +17,76 @@ import {
   signOut,
 } from "firebase/auth";
 
+import {
+  addDoc,
+  collection,
+  getFirestore,
+  serverTimestamp,
+  onSnapshot,
+  query,
+  orderBy,
+
+} from "firebase/firestore";
 
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 const loginHandler = () => {
   const provider = new GoogleAuthProvider();
   signInWithPopup(auth, provider);
 };
 
-const logOutHandler = ()=>{
-  signOut(auth)
-}
+const logOutHandler = () => {
+  signOut(auth);
+};
 
 function App() {
+
   const [user, setUser] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const divForScroll = useRef(null)
+  const submitHandler = async (e) => {
+    e.preventDefault();
+
+    try {
+      setMessage("");
+      await addDoc(collection(db, "Message"), {
+        text: message,
+        uid: user.uid,
+        uri: user.photoURL,
+        createdAt: serverTimestamp(),
+      });
+     
+      divForScroll.current.scrollIntoView({behavior:'smooth'})
+    } catch (error) {
+      alert(error);
+    }
+  };
 
   useEffect(() => {
-  const unSubscribe =   onAuthStateChanged(auth, (data) => {
+  const q = query(collection(db,'Message'), orderBy('createdAt','asc'))
+
+    const unSubscribe = onAuthStateChanged(auth, (data) => {
       setUser(data);
     });
 
-    return ()=>{
-      unSubscribe()
-    }
-  });
+   const unsubscribeForMessages =  onSnapshot(q, (snap)=>{
+      setMessages(
+        snap.docs.map((item) => {
+        const id = item.id;
+        return {
+         id, ...item.data()
+        }
+        })
+       );
+    })
+
+    return () => {
+      unSubscribe();
+      unsubscribeForMessages()
+    };
+  },[]);
 
   return (
     <Box bg={"red.50"}>
@@ -51,14 +97,27 @@ function App() {
             <Button w="full" colorScheme={"pink"} onClick={logOutHandler}>
               Logout⬆️
             </Button>
-            <VStack h="full" w={"full"} overflow={"auto"}>
-              <Message text={"Sample Message"} user="other" />
-              <Message text={"Sample Message"} user="me" />
+            <VStack h="full" w={"full"} overflow={"auto"} css={{"&::-webkit-scrollbar":{
+              display:'none'
+            }}}>
+              {messages.map(item => (
+                <Message
+                  key={item.id}
+                  user={item.uid === user.uid ? "me" : "other"}
+                  text={item.text}
+                  uri={item.uri}
+                />
+              ))}
+              <div ref={divForScroll}> </div>
             </VStack>
-
-            <form style={{ width: "100%" }}>
+         
+            <form onSubmit={submitHandler} style={{ width: "100%" }}>
               <HStack marginBottom={"4"}>
-                <Input placeholder="Enter a Message..." />
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Enter a Message..."
+                />
                 <Button colorScheme={"purple"} type="submit">
                   Send➡️
                 </Button>
