@@ -68,7 +68,7 @@ To run this application locally, follow these steps:
 
 ![Login Screenshot](/public/login.png)
 
-![Chat Screenshot](/public//chat.png)
+
 
 ## Usage
 
